@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IMNEWDAY 2026 - 참가팀 소개</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans KR',sans-serif; background:#0a0a0a; max-width:600px; margin:0 auto; }
+  .header { position:sticky; top:0; background:#0a0a0a; padding:18px 16px 12px; border-bottom:1px solid #1e1e1e; z-index:10; }
+  .header-top { display:flex; justify-content:space-between; align-items:center; }
+  .logo { font-weight:900; color:#39ff14; font-size:20px; }
+  .venue { color:#777; font-size:12px; margin-top:2px; }
+  #dlBtn { padding:6px 10px; background:#1a1a1a; color:#39ff14; border:1px solid #333; border-radius:6px; font-size:11px; cursor:pointer; }
+  #search { margin-top:12px; width:100%; padding:10px 12px; background:#1a1a1a; border:1px solid #2a2a2a; color:#fff; border-radius:8px; font-size:14px; box-sizing:border-box; }
+  #pageArea { min-height:200px; }
+  .photo { width:100%; aspect-ratio:1/1; overflow:hidden; background:#1a1a1a; cursor:pointer; }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .nav { display:flex; align-items:center; gap:10px; padding:14px 16px; border-top:1px solid #1e1e1e; }
+  .nav button { padding:12px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; }
+  #prevBtn { background:#1a1a1a; color:#ddd; }
+  #nextBtn { background:#39ff14; color:#0a0a0a; font-weight:700; }
+  #counter { flex:1; text-align:center; color:#666; font-size:12px; }
+  #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:999999; align-items:center; justify-content:center; padding:20px; }
+  #lightbox img { max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <div class="logo">IMNEWDAY 2026</div>
+    <button id="dlBtn">⬇ 전체 저장</button>
+  </div>
+  <div class="venue">동서울대학교 대강당 · 2026.08.08</div>
+  <input id="search" placeholder="팀명으로 검색하면 바로 이동해요">
+</div>
+<div id="pageArea"></div>
+<div class="nav">
+  <button id="prevBtn">◀ 이전</button>
+  <span id="counter"></span>
+  <button id="nextBtn">다음 ▶</button>
+</div>
+<div id="lightbox"><img id="lightboxImg"></div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  var idx = 0;
+  var area = document.getElementById('pageArea');
+  var counter = document.getElementById('counter');
+  var teams = (typeof teamsData !== 'undefined') ? teamsData : [];
+
+  function photoDiv(slot, photo, posX, pos, zoom, extraStyle) {
+    var d = document.createElement('div');
+    d.className = 'photo';
+    d.dataset.slot = slot;
+    if (extraStyle) d.style.marginBottom = extraStyle;
+    var img = document.createElement('img');
+    img.src = photo || '';
+    img.style.objectPosition = (posX ?? 50) + '% ' + (pos ?? 50) + '%';
+    img.style.transform = 'scale(' + ((zoom ?? 100) / 100) + ')';
+    d.appendChild(img);
+    return d;
+  }
+
+  function renderPage(){
+    if (teams.length === 0) {
+      area.innerHTML = '<div style="padding:60px 20px; text-align:center; color:#666; font-size:13px;">등록된 팀이 없어요.</div>';
+      counter.textContent = '0 / 0';
+      return;
+    }
+    if (idx < 0) idx = 0;
+    if (idx > teams.length - 1) idx = teams.length - 1;
+    var t = teams[idx];
+    area.innerHTML = '';
+    if (t.photo2) {
+      area.appendChild(photoDiv(1, t.photo, t.photoPosX, t.photoPos, t.photoZoom, '2px'));
+      area.appendChild(photoDiv(2, t.photo2, t.photoPosX2, t.photoPos2, t.photoZoom2));
+    } else {
+      area.appendChild(photoDiv(1, t.photo, t.photoPosX, t.photoPos, t.photoZoom));
+    }
+    var info = document.createElement('div');
+    info.style.padding = '18px';
+    info.innerHTML =
+      '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
+        '<span style="width:3px; height:16px; background:#39ff14; display:inline-block;"></span>' +
+        '<span style="color:#39ff14; font-size:11px; font-weight:700;">' + t.id + '</span>' +
+      '</div>' +
+      '<div style="font-size:21px; font-weight:900; color:#fff; margin-bottom:6px; line-height:1.3;">' + t.name + '</div>' +
+      '<div style="font-size:13px; color:#39ff14; margin-bottom:8px;">' + (t.intro||'') + '</div>' +
+      '<div style="font-size:12px; color:#999; line-height:1.6;">' + (t.members||'') + '</div>';
+    area.appendChild(info);
+    counter.textContent = (idx + 1) + ' / ' + teams.length;
+  }
+
+  function goTo(i){ idx = i; renderPage(); }
+  function go(dir){ idx += dir; renderPage(); }
+
+  document.getElementById('prevBtn').addEventListener('click', function(){ go(-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ go(1); });
+
+  document.getElementById('dlBtn').addEventListener('click', function(){
+    if (typeof window.jspdf === 'undefined') {
+      alert('저장 기능을 불러오는 중이에요. 잠시 후 다시 눌러주세요.');
+      return;
+    }
+    var btn = this;
+    var original = btn.textContent;
+    btn.textContent = '저장 중...';
+    setTimeout(function(){
+      try {
+        var doc = new window.jspdf.jsPDF({ unit: 'px', format: [420, 620] });
+        teams.forEach(function(t, i){
+          if (i > 0) doc.addPage([420, 620]);
+          if (t.photo) { try { doc.addImage(t.photo, 'JPEG', 20, 20, 380, 380); } catch(e){} }
+          doc.setFontSize(18);
+          doc.text(t.name || '', 20, 430);
+          doc.setFontSize(11);
+          doc.setTextColor(0, 150, 0);
+          doc.text(t.intro || '', 20, 450);
+          doc.setFontSize(9);
+          doc.setTextColor(80, 80, 80);
+          doc.text(doc.splitTextToSize(t.members || '', 380), 20, 470);
+        });
+        doc.save('IMNEWDAY2026_팀소개.pdf');
+      } catch (e) {
+        alert('저장 중 문제가 생겼어요. 다시 시도해주세요.');
+      }
+      btn.textContent = original;
+    }, 50);
+  });
+
+  area.addEventListener('click', function(e){
+    var photoEl = e.target.closest('.photo');
+    if (photoEl) {
+      var slot = photoEl.dataset.slot;
+      var t = teams[idx];
+      document.getElementById('lightboxImg').src = (slot === '2' ? t.photo2 : t.photo) || '';
+      document.getElementById('lightbox').style.display = 'flex';
+    }
+  });
+  document.getElementById('lightbox').addEventListener('click', function(){ this.style.display = 'none'; });
+
+  var touchX = null;
+  area.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; });
+  area.addEventListener('touchend', function(e){
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+    touchX = null;
+  });
+
+  document.getElementById('search').addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase();
+    if (!q) return;
+    var found = teams.findIndex(function(t){ return (t.name||'').toLowerCase().indexOf(q) > -1; });
+    if (found > -1) goTo(found);
+  });
+
+  renderPage();
+})();
+</script>
+</body>
+</html>
