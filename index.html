@@ -44,14 +44,16 @@
 </div>
 <div id="lightbox"><img id="lightboxImg"></div>
 
-<script src="data.js"></script>
+<script src="data1.js"></script>
+<script src="data2.js"></script>
 <script>
 (function(){
   var idx = 0;
   var area = document.getElementById('pageArea');
   var counter = document.getElementById('counter');
   var teams = [].concat(
-    typeof teamsData !== 'undefined' ? teamsData : []
+    typeof teamsDataPart1 !== 'undefined' ? teamsDataPart1 : [],
+    typeof teamsDataPart2 !== 'undefined' ? teamsDataPart2 : []
   );
 
   function photoDiv(slot, photo, posX, pos, zoom, extraStyle) {
